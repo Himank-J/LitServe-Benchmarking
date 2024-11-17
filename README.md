@@ -11,6 +11,12 @@ The objective is to evaluate and optimize the performance of above model's infer
 
 Here we have used a simple MNIST model trained using Pytorch lightning. This model inferenceing is optimised using below techniques and the results are benchmarked.
 
+Contents:
+- [Approaches](#approaches-implemented)
+- [Results & Comparison](#results)
+- [Conclusion](#conclusion)
+- [Future Improvements](#future-optimization-opportunities)
+  
 ---
 
 ## Approaches Implemented

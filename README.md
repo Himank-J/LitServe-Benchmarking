@@ -1,3 +1,141 @@
+# MNIST Model Benchmarking Analysis
+
+## Objective
+To evaluate and optimize the performance of MNIST model inference under different optimization strategies, focusing on both throughput and API performance metrics. For entire experiementation we will be using **LITSERVE** as our inference server.
+
+---
+
+## Approaches Implemented
+
+### 1. Initial Implementation (Baseline)
+Standard Litserve inference without any optimizations:
+- Basic forward pass through the model
+- Single image processing at a time
+- No parallel processing or optimization techniques
+
+### 2. Batching
+Processes multiple images simultaneously to leverage GPU parallelization:
+- Groups images into fixed-size batches
+- Reduces GPU memory transfers
+- Better utilization of GPU compute capabilities
+- Optimal for scenarios with multiple simultaneous requests
+
+**Accepting batch of images from the client:**
+```python
+def batch(self, inputs):
+   """Process and batch multiple inputs"""
+   batched_tensors = []
+   for image_bytes in inputs:
+      # Decode base64 string to bytes
+      img_bytes = base64.b64decode(image_bytes)
+      
+      # Convert bytes to PIL Image
+      image = Image.open(io.BytesIO(img_bytes))
+      # Transform image to tensor
+      tensor = self.transforms(image)
+      batched_tensors.append(tensor)
+      
+   # Stack all tensors into a batch
+   return torch.stack(batched_tensors).to(self.device)
+```
+
+**Configuring the server:**
+```python
+server = ls.LitServer(
+   api,
+   accelerator="gpu",
+   max_batch_size=64,  
+   batch_timeout=0.01
+)
+```
+
+### 3. Batching with Workers
+Combines batch processing with parallel CPU workers:
+- Uses thread pool for parallel image preprocessing
+- Maintains batch processing for GPU inference
+- Balances CPU and GPU workloads
+- Reduces preprocessing bottlenecks
+
+**Configuring the server:**
+```python
+server = ls.LitServer(
+   api,
+   accelerator="gpu",
+   max_batch_size=64,  
+   batch_timeout=0.01,
+   workers_per_device=4 # Number of workers per GPU
+)
+```
+
+### 4. Parallel Decoding
+Focuses on optimizing the image preprocessing pipeline:
+- Parallel image decoding using multiple CPU threads
+- Asynchronous image loading and preprocessing
+- Reduces CPU bottlenecks in image preparation
+- Efficient for large images or complex preprocessing
+
+**Accepting batch of images from the client and decoding them in parallel:**
+```python
+def batch(self, inputs):
+   """Process and batch multiple inputs using parallel processing"""
+   def process_single_image(image_bytes):
+      # Decode base64 string to bytes
+      img_bytes = base64.b64decode(image_bytes)
+      
+      # Convert bytes to PIL Image
+      image = Image.open(io.BytesIO(img_bytes))
+      # Transform image to tensor
+      return self.transforms(image)
+      
+   # Create a thread pool with max workers being either batch size or CPU count
+   with ThreadPoolExecutor(max_workers=max(len(inputs), os.cpu_count())) as pool:
+      batched_tensors = list(pool.map(process_single_image, inputs))
+      
+   # Stack all tensors into a batch
+   return torch.stack(batched_tensors).to(self.device)
+```
+
+### 5. Half Precision (FP16)
+Utilizes reduced precision arithmetic for faster computation:
+- Converts model weights to 16-bit floating-point
+- Reduces memory bandwidth requirements
+- Faster arithmetic operations on compatible GPUs
+- Lower memory footprint for model storage
+
+```python
+precision = torch.bfloat16 # using bfloat16 for half precision
+self.model.to(self.device).to(precision) # converting model to half precision
+```
+
+```python
+torch.stack(batched_tensors).to(self.device).to(precision) # converting batch of tensors to half precision
+```
+
+---
+
+## Results
+
+**Impact on Throughput, CPU and GPU Utilisation:**
+
+**Baseline:**
+![alt text](mnist_model_benchmarking/metrics/utilisation/benchmark_results_init.png)
+
+**After Batching:**
+![alt text](mnist_model_benchmarking/metrics/utilisation/benchmark_results_batching.png)
+
+**After Batching with Workers:**
+![alt text](mnist_model_benchmarking/metrics/utilisation/benchmark_results_batching_workers.png)
+
+**After Parallel Decoding:**
+![alt text](mnist_model_benchmarking/metrics/utilisation/benchmark_results_parallel_decoding.png)
+
+**After Half Precision:**
+![alt text](mnist_model_benchmarking/metrics/utilisation/benchmark_results_half_precision.png)
+
+NOTE - After parallel decoding, the throughput is not as good as the other optimizations. This is because the overhead of decoding the images in parallel outweighs the benefits of parallel processing. So half precision was implemented without parallel decoding.
+
+---
+
 ### 1. Baseline Throughput Comparison (Images/second)
 
 | Batch Size | Initial | Batching | Batching+Workers | Parallel Decoding | Half Precision |
@@ -33,3 +171,28 @@
    - For low concurrency (1): Initial implementation (24.12 req/s)
    - For high concurrency (64): Half Precision (46.71 req/s)
    - Best scaling: Batching+Workers and Half Precision
+
+
+## Conclusions
+
+1. **Optimization Impact**:
+   - Batch processing provides consistent improvements across all batch sizes
+   - Worker-based approaches show better scaling with increased concurrency
+   - Half precision offers the best performance at high concurrency levels
+
+2. **Use Case Recommendations**:
+   - For single-request scenarios: Use the initial implementation
+   - For high-concurrency production environments: Implement half precision with batching
+   - For balanced performance: Use batching with workers
+
+3. **Performance Scaling**:
+   - Throughput improvements plateau around batch size 32
+   - API performance continues to scale up to 64 concurrent requests
+   - Half precision shows the best overall scaling characteristics
+
+## Future Optimization Opportunities
+
+1. Implement dynamic batch sizing based on load
+2. Explore mixed precision training
+3. Investigate GPU memory optimization techniques
+4. Consider implementing request queuing for better resource utilization

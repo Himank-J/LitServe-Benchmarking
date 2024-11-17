@@ -7,7 +7,7 @@ In this project we have utilised [Litserve](https://lightning.ai/docs/litserve/h
 
 The objective is to evaluate and optimize the performance of above model's inference under different optimization strategies, focusing on both throughput and API performance metrics. For entire experimentation we will be using **LITSERVE** as our inference server. 
 
-# MNIST Model Benchmarking Analysis
+# [MNIST Model Benchmarking Analysis](https://github.com/Himank-J/LitServe-Benchmarking/tree/main/mnist_model_benchmarking)
 
 Here we have used a simple MNIST model trained using Pytorch lightning. This model inferenceing is optimised using below techniques and the results are benchmarked.
 

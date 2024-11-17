@@ -2,7 +2,7 @@
 
 In this project we have utilised [Litserve](https://lightning.ai/docs/litserve/home) to benchmark performance of:
 - [Image classification model (MNIST)](#mnist-model-benchmarking-analysis)
-- [Small Language Model (Smol LM)]()
+- [Small Language Model (Smol LM)](#small-language-model-benchmarking)
 
 
 The objective is to evaluate and optimize the performance of above model's inference under different optimization strategies, focusing on both throughput and API performance metrics. For entire experimentation we will be using **LITSERVE** as our inference server. 
@@ -210,3 +210,69 @@ torch.stack(batched_tensors).to(self.device).to(precision) # converting batch of
 2. Explore mixed precision training
 3. Investigate GPU memory optimization techniques
 4. Consider implementing request queuing for better resource utilization
+
+---
+
+# [Small Language Model Benchmarking]((https://github.com/Himank-J/LitServe-Benchmarking/tree/main/llm_model_benchmarking)
+
+Contents:
+- [Approaches](#approaches-implemented)
+- [Results & Comparison](#results)
+- [Conclusion](#conclusion)
+
+---
+
+## Approaches
+
+### 1. [Initial Implementation (Baseline)](#results-slm)
+Standard Litserve inference without any optimizations:
+- Basic chat conversation with Model
+- Single message processing at a time
+- No parallel processing or optimization techniques
+
+### 2. [Static KV Cache & Torch Compile](#results-slm)
+
+During decoding, a LLM computes the key-value (kv) values for each input token and since it is autoregressive, it computes the same kv values each time because the generated output becomes part of the input now. This is not very efficient because you’re recomputing the same kv values each time.
+
+To optimize this, you can use a kv-cache to store the past keys and values instead of recomputing them each time.
+
+```python
+self.model.generation_config.cache_implementation = "static"
+self.model.forward = torch.compile(
+    self.model.forward, 
+    mode="reduce-overhead",
+    fullgraph=True
+)
+```
+
+### 3. [Quantisation](#results-slm)
+
+Quantization reduces the size of the LLM weights by storing them in a lower precision. This translates to lower memory usage and makes loading LLMs for inference more accessible if you’re constrained by your GPUs memory. 
+
+```python
+quant_config = BitsAndBytesConfig(
+    load_in_8bit=True,  # Enable 8-bit quantization
+)
+self.model = AutoModelForCausalLM.from_pretrained(
+    checkpoint,
+    quantization_config=quant_config,  # Apply quantization
+    torch_dtype=torch.bfloat16,
+    device_map=device
+)
+```
+
+---
+
+## Results-SLM
+
+![alt text](llm_model_benchmarking/metrics/benchmark_metrics.png)
+
+As seen from above graph with Static KV we gave slight increase in tokens/sec but with Quantisation we are able to achieve signifcant increase. For more detailed metrics view [benchmark_results.json](llm_model_benchmarking/metrics/benchmark_results.json)
+
+---
+
+## References:
+
+1.) [Phi-3.5 Mini Instruct](https://huggingface.co/microsoft/Phi-3.5-mini-instruct)
+2.) [LLM Optimisations](https://huggingface.co/docs/transformers/main/en/llm_optims)
+3.) [Litserve](https://lightning.ai/docs/litserve/home)

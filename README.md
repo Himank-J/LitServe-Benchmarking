@@ -2,7 +2,7 @@
 
 In this project we have utilised [Litserve](https://lightning.ai/docs/litserve/home) to benchmark performance of:
 - [Image classification model (MNIST)](#mnist-model-benchmarking-analysis)
-- [Small Language Model (Smol LM)](#small-language-model-benchmarking)
+- [Small Language Model (Phi-3.5 Mini)](#small-language-model-benchmarking)
 
 
 The objective is to evaluate and optimize the performance of above model's inference under different optimization strategies, focusing on both throughput and API performance metrics. For entire experimentation we will be using **LITSERVE** as our inference server. 

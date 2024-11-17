@@ -1,19 +1,33 @@
-# MNIST Model Benchmarking Analysis
+# 📊 Throuhgput Benchmarking using LITSERVE
 
-## Objective
-To evaluate and optimize the performance of MNIST model inference under different optimization strategies, focusing on both throughput and API performance metrics. For entire experiementation we will be using **LITSERVE** as our inference server.
+In this project we have utilised [Litserve](https://lightning.ai/docs/litserve/home) to benchmark performance of:
+- [Image classification model (MNIST)](#mnist-model-benchmarking-analysis)
+- [Small Language Model (Smol LM)]()
 
+
+The objective is to evaluate and optimize the performance of above model's inference under different optimization strategies, focusing on both throughput and API performance metrics. For entire experimentation we will be using **LITSERVE** as our inference server. 
+
+# [MNIST Model Benchmarking Analysis](https://github.com/Himank-J/LitServe-Benchmarking/tree/main/mnist_model_benchmarking)
+
+Here we have used a simple MNIST model trained using Pytorch lightning. This model inferenceing is optimised using below techniques and the results are benchmarked.
+
+Contents:
+- [Approaches](#approaches-implemented)
+- [Results & Comparison](#results)
+- [Conclusion](#conclusion)
+- [Future Improvements](#future-optimization-opportunities)
+  
 ---
 
 ## Approaches Implemented
 
-### 1. Initial Implementation (Baseline)
+### 1. [Initial Implementation (Baseline)](#results)
 Standard Litserve inference without any optimizations:
 - Basic forward pass through the model
 - Single image processing at a time
 - No parallel processing or optimization techniques
 
-### 2. Batching
+### 2. [Batching](#results)
 Processes multiple images simultaneously to leverage GPU parallelization:
 - Groups images into fixed-size batches
 - Reduces GPU memory transfers
@@ -49,7 +63,7 @@ server = ls.LitServer(
 )
 ```
 
-### 3. Batching with Workers
+### 3. [Batching with Workers](#results)
 Combines batch processing with parallel CPU workers:
 - Uses thread pool for parallel image preprocessing
 - Maintains batch processing for GPU inference
@@ -67,7 +81,7 @@ server = ls.LitServer(
 )
 ```
 
-### 4. Parallel Decoding
+### 4. [Parallel Decoding](#results)
 Focuses on optimizing the image preprocessing pipeline:
 - Parallel image decoding using multiple CPU threads
 - Asynchronous image loading and preprocessing
@@ -95,7 +109,7 @@ def batch(self, inputs):
    return torch.stack(batched_tensors).to(self.device)
 ```
 
-### 5. Half Precision (FP16)
+### 5. [Half Precision (FP16)](#results)
 Utilizes reduced precision arithmetic for faster computation:
 - Converts model weights to 16-bit floating-point
 - Reduces memory bandwidth requirements
@@ -132,7 +146,7 @@ torch.stack(batched_tensors).to(self.device).to(precision) # converting batch of
 **After Half Precision:**
 ![alt text](mnist_model_benchmarking/metrics/utilisation/benchmark_results_half_precision.png)
 
-NOTE - After parallel decoding, the throughput is not as good as the other optimizations. This is because the overhead of decoding the images in parallel outweighs the benefits of parallel processing. So half precision was implemented without parallel decoding.
+**NOTE - After parallel decoding, the throughput is not as good as the other optimizations. This is because the overhead of decoding the images in parallel outweighs the benefits of parallel processing. So half precision was implemented without parallel decoding.**
 
 ---
 
@@ -143,7 +157,7 @@ NOTE - After parallel decoding, the throughput is not as good as the other optim
 | 1          | 67.38   | 66.70    | 66.54           | 66.24            | 67.29          |
 | 8          | 82.28   | 82.53    | 82.56           | 82.72            | 82.79          |
 | 32         | 84.54   | 84.82    | 85.00           | 85.05            | 84.89          |
-| 64         | 85.18   | 85.40    | 85.45           | 85.51            | 85.53          |
+| 64         | 85.18   | 85.40    | 85.45           | 85.51            | **85.53**          |
 
 ### 2. API Performance Comparison (Requests/second)
 
@@ -152,7 +166,7 @@ NOTE - After parallel decoding, the throughput is not as good as the other optim
 | 1           | 24.12   | 21.67    | 13.46           | 10.22            | 13.51          |
 | 8           | 31.32   | 32.72    | 36.58           | 24.64            | 33.41          |
 | 32          | 30.20   | 34.37    | 44.09           | 37.35            | 43.03          |
-| 64          | 31.06   | 33.99    | 40.62           | 39.97            | 46.71          |
+| 64          | 31.06   | 33.99    | 40.62           | 39.97            | **46.71**          |
 
 ### Key Observations:
 
@@ -162,8 +176,8 @@ NOTE - After parallel decoding, the throughput is not as good as the other optim
    - Half Precision shows slightly better performance at higher batch sizes
 
 2. **API Performance**:
-   - Batching+Workers shows significant improvement at higher concurrency levels
-   - Half Precision performs best at highest concurrency (64), reaching 46.71 req/s
+   - **Batching+Workers shows significant improvement at higher concurrency levels**
+   - **Half Precision performs best at highest concurrency (64), reaching 46.71 req/s**
    - Initial implementation performs better at low concurrency but doesn't scale well
    - Parallel Decoding shows lower performance at low concurrency but scales reasonably well
 

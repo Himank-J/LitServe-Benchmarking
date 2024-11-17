@@ -213,7 +213,7 @@ torch.stack(batched_tensors).to(self.device).to(precision) # converting batch of
 
 ---
 
-# [Small Language Model Benchmarking]((https://github.com/Himank-J/LitServe-Benchmarking/tree/main/llm_model_benchmarking)
+# [Small Language Model Benchmarking](https://github.com/Himank-J/LitServe-Benchmarking/tree/main/llm_model_benchmarking)
 
 Contents:
 - [Approaches](#approaches-implemented)

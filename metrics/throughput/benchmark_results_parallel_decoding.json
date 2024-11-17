@@ -1,0 +1,66 @@
+{
+    "baseline_throughput": {
+        "batch_sizes": [
+            1,
+            8,
+            32,
+            64
+        ],
+        "throughput": [
+            66.24293394234947,
+            82.71569093991297,
+            85.05267589957114,
+            85.50541744318483
+        ]
+    },
+    "api_benchmarks": {
+        "concurrency_levels": [
+            1,
+            8,
+            32,
+            64
+        ],
+        "metrics": [
+            {
+                "total_requests": 128,
+                "concurrency_level": 1,
+                "total_time": 12.527231216430664,
+                "avg_response_time": 96.89635597169399,
+                "success_rate": 100.0,
+                "requests_per_second": 10.217740679370214,
+                "avg_cpu_usage": 94.63589743589743,
+                "avg_gpu_usage": 19.692307692307693
+            },
+            {
+                "total_requests": 128,
+                "concurrency_level": 8,
+                "total_time": 5.195403814315796,
+                "avg_response_time": 290.61315953731537,
+                "success_rate": 100.0,
+                "requests_per_second": 24.637160955092543,
+                "avg_cpu_usage": 99.33076923076925,
+                "avg_gpu_usage": 42.07692307692308
+            },
+            {
+                "total_requests": 128,
+                "concurrency_level": 32,
+                "total_time": 3.427431583404541,
+                "avg_response_time": 667.807973921299,
+                "success_rate": 100.0,
+                "requests_per_second": 37.34574910839062,
+                "avg_cpu_usage": 100.0,
+                "avg_gpu_usage": 67.75
+            },
+            {
+                "total_requests": 128,
+                "concurrency_level": 64,
+                "total_time": 3.2025797367095947,
+                "avg_response_time": 740.669148042798,
+                "success_rate": 100.0,
+                "requests_per_second": 39.967779266445426,
+                "avg_cpu_usage": 100.0,
+                "avg_gpu_usage": 36.0
+            }
+        ]
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "baseline": {
+        "avg_tokens_per_sec": 30.41523721393478,
+        "std_dev": 0.5022749428856482,
+        "theoretical_max": 500,
+        "efficiency": 6.083047442786956
+    },
+    "static_kv_cache": {
+        "avg_tokens_per_sec": 32.5949282782,
+        "std_dev": 0.5022749428856482,
+        "theoretical_max": 500,
+        "efficiency": 6.51898565564
+    },
+    "quantisation": {
+        "avg_tokens_per_sec": 42.09822212,
+        "std_dev": 0.5022749428856482,
+        "theoretical_max": 500,
+        "efficiency": 8.419644424
+    }
+}
